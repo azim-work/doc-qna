@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter, File, UploadFile
 from app.models.upload import UploadResponse
 from app.core.pdf_extractor import extract_text_from_pdf
@@ -31,15 +31,39 @@ async def upload(file: UploadFile = File(...)):
     doc_id = str(uuid.uuid4())
     num_chars = len(text)
     filename = file.filename
+    uploaded_at = datetime.now(timezone.utc).isoformat()
 
     document = {
         "filename": filename,
         "num_chars": num_chars,
-        "uploaded_at": datetime.utcnow(),
+        "uploaded_at": uploaded_at,
     }
 
     # Store the document in the document store
     document_store[doc_id] = document
 
     # Return the filename and number of characters
-    return UploadResponse(doc_id=doc_id, filename=filename, num_chars=num_chars)
+    return UploadResponse(
+        doc_id=doc_id,
+        filename=filename,
+        num_chars=num_chars,
+        uploaded_at=uploaded_at,
+    )
+
+
+@router.get("/list_documents")
+def list_documents():
+    """
+    List all uploaded documents with their metadata.
+    """
+    documents = []
+    for doc_id, doc in document_store.items():
+        documents.append(
+            {
+                "doc_id": doc_id,
+                "filename": doc["filename"],
+                "num_chars": doc["num_chars"],
+                "uploaded_at": doc["uploaded_at"],
+            }
+        )
+    return documents
