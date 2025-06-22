@@ -1,0 +1,21 @@
+[project]
+name = "doc-qna-backend"
+version = "0.1.0"
+description = "Backend for doc-qna, a document q/a platform."
+authors = [
+    {name = "Azim Baghadiya"}
+]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "uvicorn[standard] (>=0.34.3,<0.35.0)",
+    "fastapi (>=0.115.13,<0.116.0)",
+    "pydantic (>=2.11.7,<3.0.0)",
+    "python-multipart (>=0.0.20,<0.0.21)",
+    "pypdf (>=5.6.1,<6.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
