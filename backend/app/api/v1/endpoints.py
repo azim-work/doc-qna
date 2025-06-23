@@ -1,4 +1,6 @@
 from datetime import datetime, timezone
+from http.client import HTTPException
+from app.models.query import QueryRequest, QueryResponse
 from fastapi import APIRouter, File, UploadFile
 from app.models.upload import UploadResponse
 from app.core.pdf_extractor import extract_text_from_pdf
@@ -67,3 +69,25 @@ def list_documents():
             }
         )
     return documents
+
+
+@router.post("/query", response_model=QueryResponse)
+def query_document(query_request: QueryRequest):
+    """
+    Query a document and return an answer (MVP placeholder).
+    """
+    document: dict = document_store.get(query_request.document_id)
+    if not document:
+        # raise ValueError(f"Document with ID {query_request.document_id} not found.")
+        raise HTTPException(
+            status_code=404,
+            detail=f"Document with ID {query_request.document_id} not found.",
+        )
+
+    answer = f'This is a placeholder answer for query "{query_request.question}" in document "{document["filename"]}".'
+
+    return QueryResponse(
+        answer=answer,
+        source_document_id=query_request.document_id,
+        source_document_name=document["filename"],
+    )
