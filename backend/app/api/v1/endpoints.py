@@ -1,10 +1,13 @@
 from datetime import datetime, timezone
-from http.client import HTTPException
+from fastapi import HTTPException
 from app.models.query import QueryRequest, QueryResponse
 from fastapi import APIRouter, File, UploadFile
 from app.models.upload import UploadResponse
 from app.core.pdf_extractor import extract_text_from_pdf
-from app.core.doc_store import document_store
+from app.core.document_store import document_store
+from app.core.indexer import index_document
+from app.core.vector_index import vector_index
+import tiktoken
 import uuid
 
 router = APIRouter()
@@ -30,7 +33,7 @@ async def upload(file: UploadFile = File(...)):
         # Decode bytes to string
         text = content.decode("utf-8", errors="ignore")
 
-    doc_id = str(uuid.uuid4())
+    document_id = str(uuid.uuid4())
     num_chars = len(text)
     filename = file.filename
     uploaded_at = datetime.now(timezone.utc).isoformat()
@@ -42,11 +45,17 @@ async def upload(file: UploadFile = File(...)):
     }
 
     # Store the document in the document store
-    document_store[doc_id] = document
+    document_store[document_id] = document
+
+    # Index the document
+    tokenizer = tiktoken.encoding_for_model("text-embedding-3-small")
+    indexes = index_document(document_id=document_id, text=text, tokenizer=tokenizer)
+    # Add the indexed chunks to the vector index
+    vector_index.extend(indexes)
 
     # Return the filename and number of characters
     return UploadResponse(
-        doc_id=doc_id,
+        doc_id=document_id,
         filename=filename,
         num_chars=num_chars,
         uploaded_at=uploaded_at,
