@@ -1,5 +1,5 @@
 def chunk_text(full_text: str, tokenizer, target_chunk_size: int = 300):
-    paragraphs = full_text.split("\n\n")
+    paragraphs = full_text.split("\n ")
     chunks = []
     cur_chunk = ""
     cur_chunk_size = 0
