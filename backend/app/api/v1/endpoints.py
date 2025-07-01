@@ -7,6 +7,7 @@ from app.core.pdf_extractor import extract_text_from_pdf
 from app.core.document_store import document_store
 from app.core.indexer import index_document
 from app.core.vector_index import vector_index
+from app.core.retriever import search_document
 import tiktoken
 import uuid
 
@@ -49,13 +50,15 @@ async def upload(file: UploadFile = File(...)):
 
     # Index the document
     tokenizer = tiktoken.encoding_for_model("text-embedding-3-small")
-    indexes = index_document(document_id=document_id, text=text, tokenizer=tokenizer)
+    indexes = index_document(
+        document_id=document_id, text=text, tokenizer=tokenizer, chunk_size=50
+    )
     # Add the indexed chunks to the vector index
     vector_index.extend(indexes)
 
     # Return the filename and number of characters
     return UploadResponse(
-        doc_id=document_id,
+        document_id=document_id,
         filename=filename,
         num_chars=num_chars,
         uploaded_at=uploaded_at,
@@ -92,8 +95,18 @@ def query_document(query_request: QueryRequest):
             status_code=404,
             detail=f"Document with ID {query_request.document_id} not found.",
         )
+    top_chunks = search_document(
+        document_id=query_request.document_id,
+        question=query_request.question,
+        k=1,  # Most relevant chunk
+    )
 
-    answer = f'This is a placeholder answer for query "{query_request.question}" in document "{document["filename"]}".'
+    if not top_chunks:
+        raise HTTPException(
+            status_code=404, detail="No relevant chunks found in the document."
+        )
+
+    answer = top_chunks[0]["text"]
 
     return QueryResponse(
         answer=answer,
