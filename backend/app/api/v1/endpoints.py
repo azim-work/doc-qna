@@ -8,8 +8,10 @@ from app.core.document_store import document_store
 from app.core.indexer import index_document
 from app.core.vector_index import vector_index
 from app.core.retriever import search_document
+from app.core.llm import generate_answer
 import tiktoken
 import uuid
+
 
 router = APIRouter()
 
@@ -88,28 +90,32 @@ def query_document(query_request: QueryRequest):
     """
     Query a document and return an answer (MVP placeholder).
     """
-    document: dict = document_store.get(query_request.document_id)
+    # alises for cleaner code
+    question, document_id = query_request.question, query_request.document_id
+
+    # Validate document
+    document: dict = document_store.get(document_id)
     if not document:
-        # raise ValueError(f"Document with ID {query_request.document_id} not found.")
         raise HTTPException(
             status_code=404,
-            detail=f"Document with ID {query_request.document_id} not found.",
+            detail=f"Document with ID {document_id} not found.",
         )
-    top_chunks = search_document(
-        document_id=query_request.document_id,
-        question=query_request.question,
-        k=1,  # Most relevant chunk
-    )
+    top_chunks = search_document(document_id=document_id, question=question, k=3)
 
     if not top_chunks:
         raise HTTPException(
             status_code=404, detail="No relevant chunks found in the document."
         )
 
-    answer = top_chunks[0]["text"]
+    # Extract only the chunks' text
+    chunk_texts = [chunk["text"] for chunk in top_chunks]
 
+    # Generate answer from the LLM
+    answer = generate_answer(chunks=chunk_texts, question=question)
+
+    # Return as API response
     return QueryResponse(
         answer=answer,
-        source_document_id=query_request.document_id,
+        source_document_id=document_id,
         source_document_name=document["filename"],
     )
