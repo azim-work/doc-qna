@@ -1,7 +1,14 @@
+import Sidebar from "./components/Sidebar";
+import QNASection from "./components/QNASection";
+
 function App() {
   return (
-    <div className="min-h-screen bg-gray-100 flex py-6 px-4">
-      <h1 className="text-xl font-bold">Document QnA</h1>
+    <div className="min-h-screen flex bg-gray-100 text-gray-800">
+      {/* Left column */}
+      <Sidebar />
+
+      {/* Right column */}
+      <QNASection />
     </div>
   );
 }
