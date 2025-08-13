@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environments
+.venv/
+.env
+
+# Byte-compiled / cache
+*.egg-info/
+*.egg
+
+# Logs
+*.log
+
+# IDE/project files
+.vscode/
+.idea/
